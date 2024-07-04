@@ -1,3 +1,4 @@
+const { response } = require('express');
 const File = require('../models/File')
 
 const cloudinary = require("cloudinary").v2
@@ -81,7 +82,7 @@ exports.imageUpload = async(req, res) =>
             res.status(200).json(
                 {
                     success:true,
-                    message:"Hurrryyy!!",
+                    message1:"Hurrryyy!!",
                     message: "successfully uploaded to cloudinary",
                     imageUrl: response.secure_url
                 }
@@ -102,3 +103,68 @@ exports.imageUpload = async(req, res) =>
             console.log("errrrrror", error)
         }
     }
+
+
+
+
+
+
+    async function video_upload_to_cloudinary(video, folder) {
+        const options = { folder, resource_type: "auto" };
+        return await cloudinary.uploader.upload(video.tempFilePath, options);
+    }
+    
+    async function compare_Function(weAreSupporting_this_types_Only, req_got_extension) {
+        return weAreSupporting_this_types_Only.includes(req_got_extension);
+    }
+    
+    exports.videoUpload = async (req, res) => {
+        try {
+            const { name, videoType, email } = req.body;
+            console.log("Name->", name, "videoType", videoType, "Email", email);
+    
+            if (!req.files || !req.files.videoUpload) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No video file uploaded!"
+                });
+            }
+    
+            const video = req.files.videoUpload;
+            console.log("Video", video);
+    
+            const weAreSupporting_this_types_Only = ["mp4", "mov"];
+            const req_got_extension = video.name.split('.').pop().toLowerCase();
+            const checke = await compare_Function(weAreSupporting_this_types_Only, req_got_extension);
+    
+            if (!checke) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Unsupported media file type!"
+                });
+            }
+    
+            // Now we have to upload this media file to cloudinary
+            const response = await video_upload_to_cloudinary(video, "codewithAamir");
+            console.log("We got this as response uploading video", response);
+    
+            return res.status(200).json({
+                success: true,
+                message: "Video uploaded successfully",
+                data: response
+            });
+    
+        } catch (error) {
+            console.error("Error uploading video:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Can't upload video to Cloudinary",
+                error: error.message
+            });
+        }
+    };
+    
+
+
+
+
